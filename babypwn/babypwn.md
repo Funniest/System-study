@@ -4,11 +4,11 @@
 
 babypwn을 처음 실행하면, 아래 그림과 같이 CodeGate!라는 말과 함께 3가지의 선택지가 나옵니다.
 
-![Alt text](https://github.com/Funniest/ROP_study/blob/master/babypwn/img/Stack.PNG)
+![Alt text](https://github.com/Funniest/System-study/blob/master/babypwn/img/Stack.PNG)
 
 여기서 취약한 곳을 정리하여 보겠습니다. (위, 아래 그림 참조)
 
-![Alt text](https://github.com/Funniest/ROP_study/blob/master/babypwn/img/Vuln.PNG)
+![Alt text](https://github.com/Funniest/System-study/blob/master/babypwn/img/Vuln.PNG)
 
 sub esp, 50 -> 0x50만큼 버퍼 생성
 

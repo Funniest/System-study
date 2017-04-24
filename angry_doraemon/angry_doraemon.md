@@ -4,11 +4,11 @@
 
 angry_doraemon을 실행하여 들어가 보면, 처음 2초 기다리라는 말과 함께 1~5까지 선택지가 나옵니다.
 
-![Alt text]()
+![Alt text](https://github.com/Funniest/System-study/blob/master/angry_doraemon/img/Main.PNG)
 
 여기서 취약한 메뉴의 번호는 4번 입니다. 
 
-![Alt text]()
+![Alt text](https://github.com/Funniest/System-study/blob/master/angry_doraemon/img/Menu_4.PNG)
 
 4번에 들어가서 자세히 보면,
 

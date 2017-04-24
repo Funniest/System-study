@@ -5,10 +5,10 @@
 ropasaurusrex를 처음 실행해 보면, 입력을 받은뒤  WIN이라는 글자와 함께 종료되는 모습을 볼 수 있습니다.
 
 ### Main
-[그림 1]
+![Alt text](https://github.com/Funniest/System-study/blob/master/ropasaurusrex/img/Main.PNG)
 
 ### Vuln Funtion
-[그림 2]
+![Alt text](https://github.com/Funniest/System-study/blob/master/ropasaurusrex/img/Funciotn.PNG)
 
 sub esp, 98 -> 0x98 만큼 버퍼 생성
 
@@ -65,7 +65,7 @@ got는 plt가 참조하는 테이블이고, 프로시저들의 주소가 들어�
 
 간단하게 dynamic link 링크 방식은 plt -> got -> 실제 함수주소를 호출하게 됩니다.
 
-[참고] 
+[참고] https://bpsecblog.wordpress.com/2016/03/07/about_got_plt_1/
 
 그럼 plt overwrite는 왜 없냐면 plt는 read only속성이기 때문에 overwrite하는게 불가능하기 때문입니다.
 

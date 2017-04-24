@@ -31,7 +31,7 @@ buf의 크기는 총 0x34(52) + SFP = (56)인데, 입력은 0x64(100)만큼 받�
 1. Canary 카나리
 2. recv_plt, recv_got
 3. ppppr
-4. system_plt
+4. system_plt -> system함수가 프로그램 내부에 있어서 구지 leak할 필요가 없습니다
 5. ppppr
 6. bss영역
 ```
@@ -45,6 +45,7 @@ buf의 크기는 총 0x34(52) + SFP = (56)인데, 입력은 0x64(100)만큼 받�
      └ recv_plt를 이용하여 bss영역에 실행하고 싶은 명령어를 씁니다.
      └ system_plt에 bss영역을 인자를 주어 명령어를 실행합니다.
 ```
+
 ### 소스코드
 Ubuntu 16 LTS 32bit 환경에서 테스팅 해보았습니다.
 

@@ -42,13 +42,9 @@ read - system을 하여 offset을 구할 때에는 gdb로 아무데나 b를 걸�
 ```
 1. 익스플로잇에 필요한 가젯들을 구합니다.
 2. 구한 가젯들을 조합하여 페이로드를 작성합니다.
-  
       └ write_plt에 read_got를 인자로 주어 로드된 read 주소를 얻어옵니다.
-
       └ 그 후 read_plt를 이용하여 dynamic섹션에 명령어를 받습니다.
-
       └ got overwrite를 이용하여 read_got를 구한 system주소를 씁니다.
-
       └ read_plt(system)에 dynamic섹션 영역을 인자로 주어 실행합니다.
 ```
 ###Got Overwrite?

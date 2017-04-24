@@ -29,7 +29,8 @@ buf의 크기는 총 0x88(136) + SFP = (140)인데, 입력은 0x100(256)만큼 �
 3. pppr
 4. dynamic_addr -> bss영역을 사용하지 않는 이유는 영역이 작아서 입니다.
 5. read - system libc offset
-  └ Offset을 구하는 이유는 주소가 가변적으로 바뀌어도 offset은 고정이기 때문에 이 offset에 base주소를 더해 주면, 원래 system주소가 나오기 때문입니다.
+  └ Offset을 구하는 이유는 주소가 가변적으로 바뀌어도 offset은 고정이기 때문에 이 offset에 base주소를 더해 주면, 
+    원래 system주소가 나오기 때문입니다.
 ```
 read - system을 하여 system의 offset을 구한다음 read_got의 addr를 얻어 구한 system offset을 빼면 원래의 system 주소가 나오게 됩니다.
 

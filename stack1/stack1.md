@@ -18,7 +18,7 @@ Stack1 을 실행 시키면, 아래 그림과 같이 입력을 받는 창이 나
 ![Alt text](https://github.com/Funniest/System-study/blob/master/stack1/img/Main.PNG)
 
 ### Process
-![Alt text]()
+![Alt text](https://github.com/Funniest/System-study/blob/master/stack1/img/Process.PNG)
 
 Process를 자세히 보면, scanf에서 제한없이 입력을 받아 오버플로우 취약점이 일어나게 됩니다.
 

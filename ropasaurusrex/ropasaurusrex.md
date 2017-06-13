@@ -68,7 +68,7 @@ got는 plt가 참조하는 테이블이고, 프로시저들의 주소가 들어�
 
 그럼 plt overwrite는 왜 없냐면 plt는 read only속성이기 때문에 overwrite하는게 불가능하기 때문입니다.
 
-###소스코드
+### 소스코드
 Ubuntu 16 LTS 32bit 환경에서 테스팅 해보았습니다.
 
 ```

@@ -47,7 +47,7 @@ read - system을 하여 offset을 구할 때에는 gdb로 아무데나 b를 걸�
       └ got overwrite를 이용하여 read_got를 구한 system주소를 씁니다.
       └ read_plt(system)에 dynamic섹션 영역을 인자로 주어 실행합니다.
 ```
-###Got Overwrite?
+### Got Overwrite?
 Got Overwrite란 read, write함수 등 함수들은 plt주소와 got주소를 가지고 있는데,
 
 plt란 외부 프로시저를 연결해주는 테이블 이라고 나와있습니다.
